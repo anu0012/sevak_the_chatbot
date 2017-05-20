@@ -8,7 +8,6 @@ const request = require('request');
 const path = require('path');
 const wit = require('node-wit').Wit;
 const log = require('node-wit').log;
-var Bot = require('./witbot');
 const WIT_TOKEN = 'ZGWVWYFJBVBG4IR22M5MDAIIUUFJD7EO';
 var messengerButton = "<html><head><title>Facebook Messenger Bot</title></head><body><h1>Facebook Messenger Bot</h1>This is a bot based on Messenger Platform QuickStart. For more details, see their <a href=\"https://developers.facebook.com/docs/messenger-platform/guides/quick-start\">docs</a>.<script src=\"https://button.glitch.me/button.js\" data-style=\"glitch\"></script><div class=\"glitchButton\" style=\"position:fixed;top:20px;right:20px;\"></div></body></html>";
 
@@ -94,7 +93,7 @@ app.post('/webhook', function (req, res) {
 
 function getTranslatedMessage(msg,lang){
   translate(msg, {to: lang}).then(res => {
-    console.log(res.text);
+    console.log("response: "+res.text);
     targetLang = res.from.language.iso;
 
     return res.text;
@@ -164,6 +163,7 @@ function setPrevCommand(param){
   //console.log(prevCommand);
 }
 
+var booleanLangCheck = false;
 // Incoming events handling
 function receivedMessage(event) {
   
@@ -180,13 +180,23 @@ function receivedMessage(event) {
 
   var messageText = message.text;
 
-  messageText = getTranslatedMessage(messageText,'en');
+  translate(messageText, {to: 'en'}).then(res => {
+    //console.log("response: "+res.text);
+    if(isNaN(messageText))
+    {
+      targetLang = res.from.language.iso;
+    }
+    
 
-  // wit.ai
+  console.log(targetLang);
+
+    messageText = res.text;
+
+    // wit.ai
   client.message(messageText, {})
   .then((data) => {
     //console.log('Yay, got Wit.ai response: ' + JSON.stringify(data));
-    //console.log(data);
+    //console.log(messageText);
     //var jsonData = JSON.parse(data);
     //console.log(data.entities);
     var keys = Object.keys(data.entities);
@@ -213,8 +223,13 @@ function receivedMessage(event) {
 
             output += i+1 + ". " + (jsonData.getplans[i].rechargeType) + '\n';
         }
-        
-        sendTextMessage(senderID, getTranslatedMessage(output,targetLang));
+
+        translate(output, {to: targetLang}).then(res => {
+          sendTextMessage(senderID, res.text);
+        }).catch(err => {
+          console.error(err);
+          return "error";
+        });
         break;
 
         case 'dth_plans':
@@ -228,7 +243,12 @@ function receivedMessage(event) {
             output += i+1 + ". " + (dthJsonData.getdthplans[i].rechargeType) + '\n';
         }
         
-        sendTextMessage(senderID, getTranslatedMessage(output,targetLang));
+        translate(output, {to: targetLang}).then(res => {
+          sendTextMessage(senderID, res.text);
+        }).catch(err => {
+          console.error(err);
+          return "error";
+        });
         break;
 
       default:
@@ -244,9 +264,14 @@ function receivedMessage(event) {
              //console.log(jsonData.getplans[0].choices[i].Detail);
             output += "Detail - " + (jsonData.getplans[0].choices[i].Detail) + '\n';
             output += "Amount - " + (jsonData.getplans[0].choices[i].Amount) + '\n';
-            output += "Validity - " + (jsonData.getplans[0].choices[i].Validity) + '\n';
+            output += "Validity - " + (jsonData.getplans[0].choices[i].Validity);
             
-            sendTextMessage(senderID, output);
+            translate(output, {to: targetLang}).then(res => {
+              sendTextMessage(senderID, res.text);
+            }).catch(err => {
+              console.error(err);
+              return "error";
+            });
             output = '';
               }
             }
@@ -255,9 +280,14 @@ function receivedMessage(event) {
              //console.log(jsonData.getplans[0].choices[i].Detail);
             output += "Detail - " + (jsonData.getplans[1].choices[i].Detail) + '\n';
             output += "Amount - " + (jsonData.getplans[1].choices[i].Amount) + '\n';
-            output += "Validity - " + (jsonData.getplans[1].choices[i].Validity) + '\n';
+            output += "Validity - " + (jsonData.getplans[1].choices[i].Validity);
             
-            sendTextMessage(senderID, output);
+            translate(output, {to: targetLang}).then(res => {
+          sendTextMessage(senderID, res.text);
+        }).catch(err => {
+          console.error(err);
+          return "error";
+        });
             output = '';
               }
             }
@@ -266,9 +296,14 @@ function receivedMessage(event) {
              //console.log(jsonData.getplans[0].choices[i].Detail);
             output += "Detail - " + (jsonData.getplans[2].choices[i].Detail) + '\n';
             output += "Amount - " + (jsonData.getplans[2].choices[i].Amount) + '\n';
-            output += "Validity - " + (jsonData.getplans[2].choices[i].Validity) + '\n';
+            output += "Validity - " + (jsonData.getplans[2].choices[i].Validity);
             
-            sendTextMessage(senderID, output);
+            translate(output, {to: targetLang}).then(res => {
+          sendTextMessage(senderID, res.text);
+        }).catch(err => {
+          console.error(err);
+          return "error";
+        });
             output = '';
               }
             }
@@ -277,9 +312,14 @@ function receivedMessage(event) {
              //console.log(jsonData.getplans[0].choices[i].Detail);
             output += "Detail - " + (jsonData.getplans[3].choices[i].Detail) + '\n';
             output += "Amount - " + (jsonData.getplans[3].choices[i].Amount) + '\n';
-            output += "Validity - " + (jsonData.getplans[3].choices[i].Validity) + '\n';
+            output += "Validity - " + (jsonData.getplans[3].choices[i].Validity);
             
-            sendTextMessage(senderID, output);
+            translate(output, {to: targetLang}).then(res => {
+          sendTextMessage(senderID, res.text);
+        }).catch(err => {
+          console.error(err);
+          return "error";
+        });
             output = '';
               }
             }
@@ -288,9 +328,14 @@ function receivedMessage(event) {
              //console.log(jsonData.getplans[0].choices[i].Detail);
             output += "Detail - " + (jsonData.getplans[4].choices[i].Detail) + '\n';
             output += "Amount - " + (jsonData.getplans[4].choices[i].Amount) + '\n';
-            output += "Validity - " + (jsonData.getplans[4].choices[i].Validity) + '\n';
+            output += "Validity - " + (jsonData.getplans[4].choices[i].Validity);
             
-            sendTextMessage(senderID, output);
+            translate(output, {to: targetLang}).then(res => {
+          sendTextMessage(senderID, res.text);
+        }).catch(err => {
+          console.error(err);
+          return "error";
+        });
             output = '';
               }
             }
@@ -299,9 +344,14 @@ function receivedMessage(event) {
              //console.log(jsonData.getplans[0].choices[i].Detail);
             output += "Detail - " + (jsonData.getplans[5].choices[i].Detail) + '\n';
             output += "Amount - " + (jsonData.getplans[5].choices[i].Amount) + '\n';
-            output += "Validity - " + (jsonData.getplans[5].choices[i].Validity) + '\n';
+            output += "Validity - " + (jsonData.getplans[5].choices[i].Validity);
             
-            sendTextMessage(senderID, output);
+            translate(output, {to: targetLang}).then(res => {
+          sendTextMessage(senderID, res.text);
+        }).catch(err => {
+          console.error(err);
+          return "error";
+        });
             output = '';
               }
             }
@@ -310,9 +360,16 @@ function receivedMessage(event) {
              //console.log(jsonData.getplans[0].choices[i].Detail);
             output += "Detail - " + (jsonData.getplans[6].choices[i].Detail) + '\n';
             output += "Amount - " + (jsonData.getplans[6].choices[i].Amount) + '\n';
-            output += "Validity - " + (jsonData.getplans[6].choices[i].Validity) + '\n';
+            output += "Validity - " + (jsonData.getplans[6].choices[i].Validity);
+
+            console.log(output);
             
-            sendTextMessage(senderID, output);
+            translate(output, {to: targetLang}).then(res => {
+          sendTextMessage(senderID, res.text);
+        }).catch(err => {
+          console.error(err);
+          return "error";
+        });
             output = '';
               }
             }
@@ -325,9 +382,46 @@ function receivedMessage(event) {
              //console.log(jsonData.getplans[0].choices[i].Detail);
             output += "Detail - " + (dthJsonData.getdthplans[0].choices[i].Detail) + '\n';
             output += "Amount - " + (dthJsonData.getdthplans[0].choices[i].Amount) + '\n';
-            output += "Validity - " + (dthJsonData.getdthplans[0].choices[i].Validity) + '\n';
+            output += "Validity - " + (dthJsonData.getdthplans[0].choices[i].Validity);
             
-            sendTextMessage(senderID, output);
+            translate(output, {to: targetLang}).then(res => {
+          sendTextMessage(senderID, res.text);
+        }).catch(err => {
+          console.error(err);
+          return "error";
+        });
+            output = '';
+              }
+            }
+            else if(parseInt(messageText) === 2){
+                for(var i=0; i < dthJsonData.getdthplans[1].choices.length; i++){
+             //console.log(jsonData.getplans[0].choices[i].Detail);
+            output += "Detail - " + (dthJsonData.getdthplans[1].choices[i].Detail) + '\n';
+            output += "Amount - " + (dthJsonData.getdthplans[1].choices[i].Amount) + '\n';
+            output += "Validity - " + (dthJsonData.getdthplans[1].choices[i].Validity);
+            
+            translate(output, {to: targetLang}).then(res => {
+          sendTextMessage(senderID, res.text);
+        }).catch(err => {
+          console.error(err);
+          return "error";
+        });
+            output = '';
+              }
+            }
+            else if(parseInt(messageText) === 3){
+                for(var i=0; i < dthJsonData.getdthplans[2].choices.length; i++){
+             //console.log(jsonData.getplans[0].choices[i].Detail);
+            output += "Detail - " + (dthJsonData.getdthplans[2].choices[i].Detail) + '\n';
+            output += "Amount - " + (dthJsonData.getdthplans[2].choices[i].Amount) + '\n';
+            output += "Validity - " + (dthJsonData.getdthplans[2].choices[i].Validity);
+            
+            translate(output, {to: targetLang}).then(res => {
+          sendTextMessage(senderID, res.text);
+        }).catch(err => {
+          console.error(err);
+          return "error";
+        });
             output = '';
               }
             }
@@ -340,6 +434,14 @@ function receivedMessage(event) {
     
   })
   .catch(console.error);
+    
+  }).catch(err => {
+    console.error(err);
+    return "error";
+  });
+
+  //console.log("msg is "+messageText);
+  
 
   
   //console.log(entityName.length);
