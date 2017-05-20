@@ -14,13 +14,15 @@ var messengerButton = "<html><head><title>Facebook Messenger Bot</title></head><
 
 // The rest of the code implements the routes for our Express server.
 let app = express();
+var mobileRechargeJSON={};
+var prevCommand = '';
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
   extended: true
 }));
 
-
+callMobileRechargesApi();
 // wit.ai interaction
 const client = new wit({accessToken: WIT_TOKEN});
 
@@ -29,6 +31,7 @@ app.get('/webhook', function(req, res) {
   if (req.query['hub.mode'] === 'subscribe' &&
       req.query['hub.verify_token'] === 'webhooktoken') {
     console.log("Validating webhook");
+    
     res.status(200).send(req.query['hub.challenge']);
   } else {
 
@@ -46,12 +49,12 @@ app.get('/', function(req, res) {
 
 // Message processing
 app.post('/webhook', function (req, res) {
-  console.log(req.body);
+  //console.log(req.body);
   var data = req.body;
 
   // Make sure this is a page subscription
   if (data.object === 'page') {
-    console.log(data.entry.changes);
+    //console.log(data.entry.changes);
     // Iterate over each entry - there may be multiple if batched
     data.entry.forEach(function(entry) {
       var pageID = entry.id;
@@ -78,43 +81,191 @@ app.post('/webhook', function (req, res) {
   }
 });
 
+function getMobileRecharges(body){
+  
+  mobileRechargeJSON = body;
+  //console.log(mobileRechargeJSON);
+}
+
+function callMobileRechargesApi(){
+  request({
+    uri: 'https://private-a8ad69-dairtelbot.apiary-mock.com/getplans',
+    proxy: null
+  }, function (error, response, body) {
+    if (!error && response.statusCode == 200) {
+      //console.log(body);
+      getMobileRecharges(body);
+
+      console.log("Successfully get recharge plans");
+    } else {
+      console.error("Unable to retrieve recharges.");
+      //console.error(response);
+      console.error("error in callMobileRechargesApi is - "+error);
+    }
+  });  
+}
+
+var entityName = '';
+
+function getEntity(param){
+  entityName = param;
+  //console.log(entityName);
+}
+
+function setPrevCommand(param){
+  prevCommand = param;
+  //console.log(prevCommand);
+}
+
 // Incoming events handling
 function receivedMessage(event) {
+  
   var senderID = event.sender.id;
   var recipientID = event.recipient.id;
   var timeOfMessage = event.timestamp;
   var message = event.message;
 
-  console.log("Received message for user %d and page %d at %d with message:", 
-    senderID, recipientID, timeOfMessage);
-  console.log(JSON.stringify(message));
+  // console.log("Received message for user %d and page %d at %d with message:", 
+  // senderID, recipientID, timeOfMessage);
+  // console.log(JSON.stringify(message));
 
   var messageId = message.mid;
 
   var messageText = message.text;
+
   // wit.ai
   client.message(messageText, {})
   .then((data) => {
-    console.log('Yay, got Wit.ai response: ' + JSON.stringify(data));
-  })
-  .catch(console.error);
-
-  var messageAttachments = message.attachments;
-
-  if (messageText) {
+    //console.log('Yay, got Wit.ai response: ' + JSON.stringify(data));
+    //console.log(data);
+    //var jsonData = JSON.parse(data);
+    //console.log(data.entities);
+    var keys = Object.keys(data.entities);
+      //console.log(keys);
+      //getEntity(JSON.stringify(keys[0]));
+      var messageAttachments = message.attachments;
+      entityName = keys[0];
+    var jsonData = JSON.parse(mobileRechargeJSON);
+      if (entityName) {
+    //console.log("yeh jo entity hai"+entityName);
     // If we receive a text message, check to see if it matches a keyword
     // and send back the template example. Otherwise, just echo the text we received.
-    switch (messageText) {
-      case 'generic':
-        sendGenericMessage(senderID);
+    
+    switch (entityName) {
+
+      case 'mobile_recharge':
+        //console.log("i am in mobile recharge");
+        setPrevCommand('mobile_recharge');
+        var output = 'Choose from the following options: \n';
+
+        for(var i=0; i < jsonData.getplans.length; i++){
+          // console.log(jsonData.getplans[i].rechargeType);
+
+            output += i+1 + ". " + (jsonData.getplans[i].rechargeType) + '\n';
+        }
+        
+        sendTextMessage(senderID, output);
         break;
 
       default:
+        //console.log("yeh jo entity hai"+entityName);
         sendTextMessage(senderID, messageText);
     }
-  } else if (messageAttachments) {
+  }else if (prevCommand){
+    console.log(parseInt(messageText));
+      if(prevCommand === 'mobile_recharge'){
+          var output = '';
+              if(parseInt(messageText) === 1){
+                for(var i=0; i < jsonData.getplans[0].choices.length; i++){
+             //console.log(jsonData.getplans[0].choices[i].Detail);
+            output += "Detail - " + (jsonData.getplans[0].choices[i].Detail) + '\n';
+            output += "Amount - " + (jsonData.getplans[0].choices[i].Amount) + '\n';
+            output += "Validity - " + (jsonData.getplans[0].choices[i].Validity) + '\n';
+            
+            sendTextMessage(senderID, output);
+            output = '';
+              }
+            }
+            else if(parseInt(messageText) === 2){
+                for(var i=0; i < jsonData.getplans[1].choices.length; i++){
+             //console.log(jsonData.getplans[0].choices[i].Detail);
+            output += "Detail - " + (jsonData.getplans[1].choices[i].Detail) + '\n';
+            output += "Amount - " + (jsonData.getplans[1].choices[i].Amount) + '\n';
+            output += "Validity - " + (jsonData.getplans[1].choices[i].Validity) + '\n';
+            
+            sendTextMessage(senderID, output);
+            output = '';
+              }
+            }
+            else if(parseInt(messageText) === 3){
+                for(var i=0; i < jsonData.getplans[2].choices.length; i++){
+             //console.log(jsonData.getplans[0].choices[i].Detail);
+            output += "Detail - " + (jsonData.getplans[2].choices[i].Detail) + '\n';
+            output += "Amount - " + (jsonData.getplans[2].choices[i].Amount) + '\n';
+            output += "Validity - " + (jsonData.getplans[2].choices[i].Validity) + '\n';
+            
+            sendTextMessage(senderID, output);
+            output = '';
+              }
+            }
+            else if(parseInt(messageText) === 4){
+                for(var i=0; i < jsonData.getplans[3].choices.length; i++){
+             //console.log(jsonData.getplans[0].choices[i].Detail);
+            output += "Detail - " + (jsonData.getplans[3].choices[i].Detail) + '\n';
+            output += "Amount - " + (jsonData.getplans[3].choices[i].Amount) + '\n';
+            output += "Validity - " + (jsonData.getplans[3].choices[i].Validity) + '\n';
+            
+            sendTextMessage(senderID, output);
+            output = '';
+              }
+            }
+            else if(parseInt(messageText) === 5){
+                for(var i=0; i < jsonData.getplans[4].choices.length; i++){
+             //console.log(jsonData.getplans[0].choices[i].Detail);
+            output += "Detail - " + (jsonData.getplans[4].choices[i].Detail) + '\n';
+            output += "Amount - " + (jsonData.getplans[4].choices[i].Amount) + '\n';
+            output += "Validity - " + (jsonData.getplans[4].choices[i].Validity) + '\n';
+            
+            sendTextMessage(senderID, output);
+            output = '';
+              }
+            }
+            else if(parseInt(messageText) === 6){
+                for(var i=0; i < jsonData.getplans[5].choices.length; i++){
+             //console.log(jsonData.getplans[0].choices[i].Detail);
+            output += "Detail - " + (jsonData.getplans[5].choices[i].Detail) + '\n';
+            output += "Amount - " + (jsonData.getplans[5].choices[i].Amount) + '\n';
+            output += "Validity - " + (jsonData.getplans[5].choices[i].Validity) + '\n';
+            
+            sendTextMessage(senderID, output);
+            output = '';
+              }
+            }
+            else if(parseInt(messageText) === 7){
+                for(var i=0; i < jsonData.getplans[6].choices.length; i++){
+             //console.log(jsonData.getplans[0].choices[i].Detail);
+            output += "Detail - " + (jsonData.getplans[6].choices[i].Detail) + '\n';
+            output += "Amount - " + (jsonData.getplans[6].choices[i].Amount) + '\n';
+            output += "Validity - " + (jsonData.getplans[6].choices[i].Validity) + '\n';
+            
+            sendTextMessage(senderID, output);
+            output = '';
+              }
+            }
+
+      }
+      
+  }
+   else if (messageAttachments) {
     sendTextMessage(senderID, "Message with attachment received");
   }
+    
+  })
+  .catch(console.error);
+
+  
+  //console.log(entityName.length);
+
 }
 
 function receivedPostback(event) {
@@ -126,8 +277,8 @@ function receivedPostback(event) {
   // button for Structured Messages. 
   var payload = event.postback.payload;
 
-  console.log("Received postback for user %d and page %d with payload '%s' " + 
-    "at %d", senderID, recipientID, payload, timeOfPostback);
+  // console.log("Received postback for user %d and page %d with payload '%s' " + 
+  //   "at %d", senderID, recipientID, payload, timeOfPostback);
 
   // When a postback is called, we'll send a message back to the sender to 
   // let them know it was successful
@@ -197,7 +348,6 @@ function sendGenericMessage(recipientId) {
   callSendAPI(messageData);
 }
 
-//var proxyUrl = "http://ipg_2014019:fSmtSjqO@192.168.1.107:3128";
 
 function callSendAPI(messageData) {
   request({
@@ -216,8 +366,8 @@ function callSendAPI(messageData) {
         messageId, recipientId);
     } else {
       console.error("Unable to send message.");
-      console.error(response);
-      console.error(error);
+      //console.error(response);
+      console.error("error in callsendApi is - "+error);
     }
   });  
 }
