@@ -15,14 +15,21 @@ var messengerButton = "<html><head><title>Facebook Messenger Bot</title></head><
 // The rest of the code implements the routes for our Express server.
 let app = express();
 var mobileRechargeJSON={};
+var dthRechargeJSON={};
 var prevCommand = '';
 
+// google-translate
+const translate = require('google-translate-api');
+const languages = require('google-translate-api/languages');
+var language = 'en';
+var targetLang = 'en';
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
   extended: true
 }));
 
 callMobileRechargesApi();
+callDTHRechargesApi();
 // wit.ai interaction
 const client = new wit({accessToken: WIT_TOKEN});
 
@@ -81,10 +88,32 @@ app.post('/webhook', function (req, res) {
   }
 });
 
+// function getLang(res){
+//   return res.from.language.iso;
+// }
+
+function getTranslatedMessage(msg,lang){
+  translate(msg, {to: lang}).then(res => {
+    console.log(res.text);
+    targetLang = res.from.language.iso;
+
+    return res.text;
+    
+  }).catch(err => {
+    console.error(err);
+    return "error";
+  });
+}
+
 function getMobileRecharges(body){
   
   mobileRechargeJSON = body;
   //console.log(mobileRechargeJSON);
+}
+
+function getDTHRecharges(body){
+  
+  dthRechargeJSON = body;
 }
 
 function callMobileRechargesApi(){
@@ -101,6 +130,24 @@ function callMobileRechargesApi(){
       console.error("Unable to retrieve recharges.");
       //console.error(response);
       console.error("error in callMobileRechargesApi is - "+error);
+    }
+  });  
+}
+
+function callDTHRechargesApi(){
+  request({
+    uri: 'https://private-de788-getdth.apiary-mock.com/getDTH',
+    proxy: null
+  }, function (error, response, body) {
+    if (!error && response.statusCode == 200) {
+      //console.log(body);
+      getDTHRecharges(body);
+
+      console.log("Successfully get dth recharge plans");
+    } else {
+      console.error("Unable to retrieve dth recharges.");
+      //console.error(response);
+      console.error("error in callDTHRechargesApi is - "+error);
     }
   });  
 }
@@ -133,6 +180,8 @@ function receivedMessage(event) {
 
   var messageText = message.text;
 
+  messageText = getTranslatedMessage(messageText,'en');
+
   // wit.ai
   client.message(messageText, {})
   .then((data) => {
@@ -146,6 +195,7 @@ function receivedMessage(event) {
       var messageAttachments = message.attachments;
       entityName = keys[0];
     var jsonData = JSON.parse(mobileRechargeJSON);
+    var dthJsonData = JSON.parse(dthRechargeJSON);
       if (entityName) {
     //console.log("yeh jo entity hai"+entityName);
     // If we receive a text message, check to see if it matches a keyword
@@ -164,12 +214,26 @@ function receivedMessage(event) {
             output += i+1 + ". " + (jsonData.getplans[i].rechargeType) + '\n';
         }
         
-        sendTextMessage(senderID, output);
+        sendTextMessage(senderID, getTranslatedMessage(output,targetLang));
+        break;
+
+        case 'dth_plans':
+        setPrevCommand('dth_plans');
+        var output = 'Choose from the following options: \n';
+
+
+        for(var i=0; i < dthJsonData.getdthplans.length; i++){
+          // console.log(jsonData.getplans[i].rechargeType);
+
+            output += i+1 + ". " + (dthJsonData.getdthplans[i].rechargeType) + '\n';
+        }
+        
+        sendTextMessage(senderID, getTranslatedMessage(output,targetLang));
         break;
 
       default:
         //console.log("yeh jo entity hai"+entityName);
-        sendTextMessage(senderID, messageText);
+        sendTextMessage(senderID, "Sorry I couldn't understand!!! Please try again.");
     }
   }else if (prevCommand){
     console.log(parseInt(messageText));
@@ -253,6 +317,20 @@ function receivedMessage(event) {
               }
             }
 
+      }
+
+      if(prevCommand === 'dth_plans'){
+          if(parseInt(messageText) === 1){
+                for(var i=0; i < dthJsonData.getdthplans[0].choices.length; i++){
+             //console.log(jsonData.getplans[0].choices[i].Detail);
+            output += "Detail - " + (dthJsonData.getdthplans[0].choices[i].Detail) + '\n';
+            output += "Amount - " + (dthJsonData.getdthplans[0].choices[i].Amount) + '\n';
+            output += "Validity - " + (dthJsonData.getdthplans[0].choices[i].Validity) + '\n';
+            
+            sendTextMessage(senderID, output);
+            output = '';
+              }
+            }
       }
       
   }
