@@ -179,6 +179,8 @@ function receivedMessage(event) {
   var messageId = message.mid;
 
   var messageText = message.text;
+  
+  //console.log(messageText.length);
 
   translate(messageText, {to: 'en'}).then(res => {
     //console.log("response: "+res.text);
@@ -191,7 +193,7 @@ function receivedMessage(event) {
   console.log(targetLang);
 
     messageText = res.text;
-
+messageText = messageText.replace('null',"");
     // wit.ai
   client.message(messageText, {})
   .then((data) => {
@@ -204,9 +206,11 @@ function receivedMessage(event) {
       //getEntity(JSON.stringify(keys[0]));
       var messageAttachments = message.attachments;
       entityName = keys[0];
+      console.log(data);
     var jsonData = JSON.parse(mobileRechargeJSON);
     var dthJsonData = JSON.parse(dthRechargeJSON);
-      if (entityName) {
+
+      if (entityName && isNaN(data._text)) {
     //console.log("yeh jo entity hai"+entityName);
     // If we receive a text message, check to see if it matches a keyword
     // and send back the template example. Otherwise, just echo the text we received.
@@ -251,12 +255,79 @@ function receivedMessage(event) {
         });
         break;
 
+        case 'need_sim':
+        var output = 'Please visit the Airtel Store to get a 4G sim/micro sim/nano sim. Alternately visit http://www.airtel.in/4g/sim-swap to have your sim home delivered.';
+        translate(output, {to: targetLang}).then(res => {
+          sendTextMessage(senderID, res.text);
+        }).catch(err => {
+          console.error(err);
+          return "error";
+        });
+        break;
+
+        case 'recharge_not_reflected':
+        var output = "You may check the status of your recent recharges using the following avenues: Sign in to your account using your prepaid mobile number on airtel.in . Click on the Recharge History tab on your account home screen to get the status of your recharges. Dial *121*3# to check your recent recharges Download myAirtel app and add your prepaid account on it using the ‘Add account’ link under the ‘my accounts’ section on the homepage. Tap on the prepaid account from the home screen and select Recharge History to get the status of your recharge. Please note only recharges made through myAirtel app are shown here.";
+        translate(output, {to: targetLang}).then(res => {
+          sendTextMessage(senderID, res.text);
+        }).catch(err => {
+          console.error(err);
+          return "error";
+        });
+        break;
+
+        case 'last_three_bills':
+        var output = 'Visit https://www.airtel.in/personal/myaccount/postpaid/ to view, download or email your last bills to your registered email id.'
+        translate(output, {to: targetLang}).then(res => {
+          sendTextMessage(senderID, res.text);
+        }).catch(err => {
+          console.error(err);
+          return "error";
+        });
+        break;
+
+        case 'change_my_plan':
+        var output = 'You may check your current bill plan benefits and change your plan by using one of the below: Login to airtel.in with your registered mobile number and click on My Plan to view your current plan benefits and change to any desired plan. Download myairtel app and visit the My Account-> Plan section to view your current plan benefits. You need to choose the myPlan category, define the freebies and then add boosters (optional) to complete the change plan request.';
+        translate(output, {to: targetLang}).then(res => {
+          sendTextMessage(senderID, res.text);
+        }).catch(err => {
+          console.error(err);
+          return "error";
+        });
+        break;
+
+        case 'greetings':
+        var output = 'Hey there, This is sevak the chatbot. Ask me for mobile/dth recharges or other FAQs. You can ask in your native language also.';
+        sendTextMessage(senderID,output);
+        break;
+
+        case 'location':
+        var output = 'https://www.google.co.in/maps/place/airtel+store+in+' + data.entities.location[0].value ;
+        sendTextMessage(senderID,output);
+        output = 'Visit https://www.airtel.in/store to view store details';
+        translate(output, {to: targetLang}).then(res => {
+          sendTextMessage(senderID, res.text);
+        }).catch(err => {
+          console.error(err);
+          return "error";
+        });
+        break;
+
+        // case 'airtel_store':
+        // var output = 'Visit https://www.airtel.in/store to view store details';
+        // translate(output, {to: targetLang}).then(res => {
+        //   sendTextMessage(senderID, res.text);
+        // }).catch(err => {
+        //   console.error(err);
+        //   return "error";
+        // });
+        // break;
+
       default:
         //console.log("yeh jo entity hai"+entityName);
         sendTextMessage(senderID, "Sorry I couldn't understand!!! Please try again.");
     }
   }else if (prevCommand){
-    console.log(parseInt(messageText));
+    //console.log(parseInt(messageText));
       if(prevCommand === 'mobile_recharge'){
           var output = '';
               if(parseInt(messageText) === 1){
@@ -430,6 +501,8 @@ function receivedMessage(event) {
   }
    else if (messageAttachments) {
     sendTextMessage(senderID, "Message with attachment received");
+  }else{
+    sendTextMessage(senderID, "Sorry I couldn't understand!!! Please try again.");
   }
     
   })
@@ -439,12 +512,6 @@ function receivedMessage(event) {
     console.error(err);
     return "error";
   });
-
-  //console.log("msg is "+messageText);
-  
-
-  
-  //console.log(entityName.length);
 
 }
 
@@ -492,13 +559,13 @@ function sendGenericMessage(recipientId) {
         payload: {
           template_type: "generic",
           elements: [{
-            title: "rift",
-            subtitle: "Next-generation virtual reality",
-            item_url: "https://www.oculus.com/en-us/rift/",               
-            image_url: "http://messengerdemo.parseapp.com/img/rift.png",
+            title: "Airtel",
+            subtitle: "Next-generation entertainment",
+            item_url: "https://www.airtel.in/services-for-home",               
+            image_url: "https://www.airtel.in/assets/images/landing-hotspot.png",
             buttons: [{
               type: "web_url",
-              url: "https://www.oculus.com/en-us/rift/",
+              url: "https://www.airtel.in/broadband/",
               title: "Open Web URL"
             }, {
               type: "postback",
@@ -506,13 +573,13 @@ function sendGenericMessage(recipientId) {
               payload: "Payload for first bubble",
             }],
           }, {
-            title: "touch",
-            subtitle: "Your Hands, Now in VR",
-            item_url: "https://www.oculus.com/en-us/touch/",               
-            image_url: "http://messengerdemo.parseapp.com/img/touch.png",
+            title: "digital-tv",
+            subtitle: "Your Hands, Now in Airtel",
+            item_url: "http://www.airtel.in/digital-tv/experience-it/dth-hd",               
+            image_url: "http://www.airtel.in/wps/wcm/connect/7530ae36-d103-41e4-b436-5caf401793e6/705_291.jpg?MOD=AJPERES&CACHEID=7530ae36-d103-41e4-b436-5caf401793e6",
             buttons: [{
               type: "web_url",
-              url: "https://www.oculus.com/en-us/touch/",
+              url: "http://www.airtel.in/digital-tv/experience-it/dth-hd",
               title: "Open Web URL"
             }, {
               type: "postback",
@@ -530,6 +597,7 @@ function sendGenericMessage(recipientId) {
 
 
 function callSendAPI(messageData) {
+  console.log(messageData);
   request({
     uri: 'https://graph.facebook.com/v2.6/me/messages',
     qs: { access_token: 'EAAGt44ggxyYBAEv667UeUHZCEAdCpgJyQy3PRGjkSSDOZA8bX244iIoMz1Ri8oW45BB1PZCt2TAnm1ESELWHRZAAocPNToVciyJGZAzc8w3wWZCPEe8lAHZBdZALwn8Ic7qTc4FL0LYnGhpsD0X3ZBHu9dUFMZAP1oaKQSL9F3PDnx0AZDZD' },
@@ -542,8 +610,8 @@ function callSendAPI(messageData) {
       var recipientId = body.recipient_id;
       var messageId = body.message_id;
 
-      console.log("Successfully sent generic message with id %s to recipient %s", 
-        messageId, recipientId);
+      console.log("Successfully sent generic message with body ", 
+        body);
     } else {
       console.error("Unable to send message.");
       //console.error(response);
