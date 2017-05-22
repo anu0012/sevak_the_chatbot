@@ -8,7 +8,7 @@ const request = require('request');
 const path = require('path');
 const wit = require('node-wit').Wit;
 const log = require('node-wit').log;
-const WIT_TOKEN = 'ZGWVWYFJBVBG4IR22M5MDAIIUUFJD7EO';
+const WIT_TOKEN = 'PUT_YOUR_ACCESS_TOKEN';
 var messengerButton = "<html><head><title>Facebook Messenger Bot</title></head><body><h1>Facebook Messenger Bot</h1>This is a bot based on Messenger Platform QuickStart. For more details, see their <a href=\"https://developers.facebook.com/docs/messenger-platform/guides/quick-start\">docs</a>.<script src=\"https://button.glitch.me/button.js\" data-style=\"glitch\"></script><div class=\"glitchButton\" style=\"position:fixed;top:20px;right:20px;\"></div></body></html>";
 
 // The rest of the code implements the routes for our Express server.
@@ -600,7 +600,7 @@ function callSendAPI(messageData) {
   console.log(messageData);
   request({
     uri: 'https://graph.facebook.com/v2.6/me/messages',
-    qs: { access_token: 'EAAGt44ggxyYBAEv667UeUHZCEAdCpgJyQy3PRGjkSSDOZA8bX244iIoMz1Ri8oW45BB1PZCt2TAnm1ESELWHRZAAocPNToVciyJGZAzc8w3wWZCPEe8lAHZBdZALwn8Ic7qTc4FL0LYnGhpsD0X3ZBHu9dUFMZAP1oaKQSL9F3PDnx0AZDZD' },
+    qs: { access_token: 'PUT_YOUR_ACCESS_TOKEN' },
     method: 'POST',
     proxy: null,
     json: messageData
